@@ -9,13 +9,14 @@ contract('Test', ([owner, manaAddress]) => {
    before( async () => {
       token = await DCLtoken.new(owner, 1000, {from: owner})
       MANAtoken = await MANAToken.new({from: owner})
-      //console.log(ERC20.new(token.address));
+
       crowdsale = await MANACrowdsale.new(
          1,
          manaAddress,
-         await ERC20.new(token.address),
-         await ERC20.new(MANAtoken.address),
-         {from: owner})
+         token.address,
+         MANAtoken.address,
+         {from: owner}
+      )
    })
 
    context('Fuknutz', async () => {

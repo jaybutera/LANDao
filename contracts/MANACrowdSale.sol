@@ -54,18 +54,18 @@ contract MANACrowdsale {
     * @param _wallet Address where collected funds will be forwarded to
     * @param _token Address of the token being sold
     */
-   constructor(uint256 _rate, address _wallet, ERC20 _token, ERC20 _manatoken) public {
+   constructor(uint256 _rate, address _wallet, address _token, address _manatoken) public {
       require(_rate > 0);
       require(_wallet != address(0));
       require(_token != address(0));
 
       // TODO: This is for testing, manatoken should not be a parameter
-      MANAtoken = _manatoken;
+      MANAtoken = ERC20( _manatoken );
 
       //MANAtoken = ERC20(...); // TODO: Get MANA token address (and deploy for testing)
       rate = _rate;
       wallet = this;
-      token = _token;
+      token = ERC20( _token );
    }
 
    // -----------------------------------------
