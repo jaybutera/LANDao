@@ -1,7 +1,7 @@
 pragma solidity ^0.4.23;
 
-import "../token/ERC20/ERC20.sol";
-import "../math/SafeMath.sol";
+import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
+import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
 
 /**
@@ -16,7 +16,7 @@ import "../math/SafeMath.sol";
  * the methods to add functionality. Consider using 'super' where appropiate to concatenate
  * behavior.
  */
-contract Crowdsale {
+contract MANACrowdsale {
    using SafeMath for uint256;
 
    // The token being sold
@@ -54,14 +54,17 @@ contract Crowdsale {
     * @param _wallet Address where collected funds will be forwarded to
     * @param _token Address of the token being sold
     */
-   constructor(uint256 _rate, address _wallet, ERC20 _token) public {
+   constructor(uint256 _rate, address _wallet, ERC20 _token, ERC20 _manatoken) public {
       require(_rate > 0);
       require(_wallet != address(0));
       require(_token != address(0));
 
-      MANAtoken = ERC20(...); // TODO: Get MANA token address (and deploy for testing)
+      // TODO: This is for testing, manatoken should not be a parameter
+      MANAtoken = _manatoken;
+
+      //MANAtoken = ERC20(...); // TODO: Get MANA token address (and deploy for testing)
       rate = _rate;
-      wallet = _wallet;
+      wallet = this;
       token = _token;
    }
 
@@ -78,34 +81,34 @@ contract Crowdsale {
    }
    */
 
-   function buyTokens(address _beneficiary, uint256 _value) public {
-      _preValidatePurchase(_beneficiary, _value);
+   function buyTokens(address _beneficiary, uint256 _manaAmount) public {
+      _preValidatePurchase(_beneficiary, _manaAmount);
 
       // Forward MANA to local wallet
-      transferFrom(
+      MANAtoken.transferFrom(
          _beneficiary,
          wallet,
-         _value);
+         _manaAmount);
 
       // calculate token amount to be created
-      uint256 tokens = _getTokenAmount(_value);
+      uint256 tokens = _getTokenAmount(_manaAmount);
 
       // update state
-      weiRaised = weiRaised.add(weiAmount);
+      weiRaised = weiRaised.add(_manaAmount);
 
       // Send tokens to beneficiary
       _processPurchase(_beneficiary, tokens);
       emit TokenPurchase(
          msg.sender,
          _beneficiary,
-         weiAmount,
+         _manaAmount,
          tokens
       );
 
       // Does nothing
-      _updatePurchasingState(_beneficiary, weiAmount);
+      _updatePurchasingState(_beneficiary, _manaAmount);
       // Does nothing
-      _postValidatePurchase(_beneficiary, weiAmount);
+      _postValidatePurchase(_beneficiary, _manaAmount);
    }
 
    /**
