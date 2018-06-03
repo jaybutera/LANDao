@@ -20,7 +20,7 @@ contract MANACrowdsale {
    using SafeMath for uint256;
 
    // The token being sold
-   ERC20 public token;
+   ERC20 public ICOtoken;
    ERC20 private MANAtoken;
 
    // Address where MANA funds are collected
@@ -33,7 +33,7 @@ contract MANACrowdsale {
    uint256 public rate;
 
    // Amount of wei raised
-   uint256 public weiRaised;
+   uint256 public manaRaised;
 
    /**
     * Event for token purchase logging
@@ -54,18 +54,18 @@ contract MANACrowdsale {
     * @param _wallet Address where collected funds will be forwarded to
     * @param _token Address of the token being sold
     */
-   constructor(uint256 _rate, address _wallet, ERC20 _token, ERC20 _manatoken) public {
+   constructor(uint256 _rate, address _wallet, address _token, address _manatoken) public {
       require(_rate > 0);
       require(_wallet != address(0));
       require(_token != address(0));
 
       // TODO: This is for testing, manatoken should not be a parameter
-      MANAtoken = _manatoken;
+      MANAtoken = ERC20(_manatoken);
 
       //MANAtoken = ERC20(...); // TODO: Get MANA token address (and deploy for testing)
       rate = _rate;
       wallet = this;
-      token = _token;
+      ICOtoken = ERC20(_token);
    }
 
    // -----------------------------------------
@@ -81,8 +81,11 @@ contract MANACrowdsale {
    }
    */
 
-   function buyTokens(address _beneficiary, uint256 _manaAmount) public {
-      _preValidatePurchase(_beneficiary, _manaAmount);
+   function buyTokens( uint256 _manaAmount) public {
+      require(_manaAmount != 0);
+      address _beneficiary = msg.sender;
+
+      /* _preValidatePurchase(_beneficiary, _manaAmount); */
 
       // Forward MANA to local wallet
       MANAtoken.transferFrom(
@@ -94,21 +97,23 @@ contract MANACrowdsale {
       uint256 tokens = _getTokenAmount(_manaAmount);
 
       // update state
-      weiRaised = weiRaised.add(_manaAmount);
+      manaRaised = manaRaised.add(_manaAmount);
+
 
       // Send tokens to beneficiary
-      _processPurchase(_beneficiary, tokens);
-      emit TokenPurchase(
+      ICOtoken.transfer(_beneficiary, tokens);
+      /* _processPurchase(_beneficiary, tokens); */
+      /* emit TokenPurchase(
          msg.sender,
          _beneficiary,
          _manaAmount,
          tokens
-      );
+      ); */
 
-      // Does nothing
+      /* // Does nothing
       _updatePurchasingState(_beneficiary, _manaAmount);
       // Does nothing
-      _postValidatePurchase(_beneficiary, _manaAmount);
+      _postValidatePurchase(_beneficiary, _manaAmount); */
    }
 
    /**
@@ -125,7 +130,7 @@ contract MANACrowdsale {
       uint256 tokens = _getTokenAmount(weiAmount);
 
       // update state
-      weiRaised = weiRaised.add(weiAmount);
+      manaRaised = manaRaised.add(weiAmount);
 
       _processPurchase(_beneficiary, tokens);
       emit TokenPurchase(
@@ -149,26 +154,26 @@ contract MANACrowdsale {
    /**
     * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met. Use super to concatenate validations.
     * @param _beneficiary Address performing the token purchase
-    * @param _weiAmount Value in wei involved in the purchase
+    * @param _manaAmount Value in wei involved in the purchase
     */
    function _preValidatePurchase(
       address _beneficiary,
-      uint256 _weiAmount
+      uint256 _manaAmount
    )
       internal
    {
       require(_beneficiary != address(0));
-      require(_weiAmount != 0);
+      require(_manaAmount != 0);
    }
 
    /**
     * @dev Validation of an executed purchase. Observe state and use revert statements to undo rollback when valid conditions are not met.
     * @param _beneficiary Address performing the token purchase
-    * @param _weiAmount Value in wei involved in the purchase
+    * @param _manaAmount Value in wei involved in the purchase
     */
    function _postValidatePurchase(
       address _beneficiary,
-      uint256 _weiAmount
+      uint256 _manaAmount
    )
       internal
    {
@@ -186,7 +191,7 @@ contract MANACrowdsale {
    )
       internal
    {
-      token.transfer(_beneficiary, _tokenAmount);
+      ICOtoken.transfer(_beneficiary, _tokenAmount);
    }
 
    /**
@@ -206,11 +211,11 @@ contract MANACrowdsale {
    /**
     * @dev Override for extensions that require an internal state to check for validity (current user contributions, etc.)
     * @param _beneficiary Address receiving the tokens
-    * @param _weiAmount Value in wei involved in the purchase
+    * @param _manaAmount Value in wei involved in the purchase
     */
    function _updatePurchasingState(
       address _beneficiary,
-      uint256 _weiAmount
+      uint256 _manaAmount
    )
       internal
    {
@@ -219,13 +224,13 @@ contract MANACrowdsale {
 
    /**
     * @dev Override to extend the way in which ether is converted to tokens.
-    * @param _weiAmount Value in wei to be converted into tokens
-    * @return Number of tokens that can be purchased with the specified _weiAmount
+    * @param _manaAmount Value in wei to be converted into tokens
+    * @return Number of tokens that can be purchased with the specified _manaAmount
     */
-   function _getTokenAmount(uint256 _weiAmount)
+   function _getTokenAmount(uint256 _manaAmount)
       internal view returns (uint256)
    {
-      return _weiAmount.mul(rate);
+      return _manaAmount.mul(rate);
    }
 
    /**
@@ -235,4 +240,3 @@ contract MANACrowdsale {
       wallet.transfer(msg.value);
    }
 }
-

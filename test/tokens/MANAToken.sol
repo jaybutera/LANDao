@@ -1,11 +1,10 @@
 pragma solidity ^0.4.11;
 
-import "openzeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import 'openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
+
 //import "./BurnableToken.sol";
 
-contract MANAToken is BurnableToken, PausableToken, MintableToken {
+contract MANAToken is StandardToken {
 
     string public constant symbol = "MANA";
 
@@ -13,8 +12,8 @@ contract MANAToken is BurnableToken, PausableToken, MintableToken {
 
     uint8 public constant decimals = 18;
 
-    function burn(uint256 _value) whenNotPaused public {
-        super.burn(_value);
+    constructor(address initialAccount, uint256 initialBalance) public {
+      balances[initialAccount] = initialBalance;
+      totalSupply_ = initialBalance;
     }
 }
-
