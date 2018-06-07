@@ -1,23 +1,28 @@
-const DCLtoken = artifacts.require("DCLtoken");
+const ICOtokenContract = artifacts.require("ICOtoken");
 const MANACrowdsale = artifacts.require("MANACrowdsale");
 const MANAToken = artifacts.require("MANAToken");
 const ERC20 = artifacts.require("ERC20");
 
-contract("Crowdsale", ([owner, manaWalletAddress, buyer]) => {
+contract("Crowdsale", ([owner, externalWallet, buyer]) => {
   let ICOtoken, crowdsale, MANAtoken;
-  const MANA_FOR_BUYER = 10;
-  const MANA_USED_FOR_BUYING = 5;
-  const TOTAL_TOKEN_SUPPLY = 100;
+  const TOTAL_TOKEN_SUPPLY = 1000000000000000000;
+  const MANA_FOR_BUYER = TOTAL_TOKEN_SUPPLY / 100;
+  const MANA_USED_FOR_BUYING = MANA_FOR_BUYER / 1;
 
   before(async () => {
-    ICOtoken = await DCLtoken.new(owner, TOTAL_TOKEN_SUPPLY);
+    ICOtoken = await ICOtokenContract.new(owner, TOTAL_TOKEN_SUPPLY);
     MANAtoken = await MANAToken.new(owner, TOTAL_TOKEN_SUPPLY);
     crowdsale = await MANACrowdsale.new(
       1,
-      MANAtoken.address,
+      externalWallet,
       ICOtoken.address,
       MANAtoken.address
     );
+    // Transfer ICO tokens to crowdsale
+    await ICOtoken.transfer(crowdsale.address, TOTAL_TOKEN_SUPPLY, {
+      from: owner
+    });
+    // Transfer some MANA to the buyer for purchasing
     await MANAtoken.transfer(buyer, MANA_FOR_BUYER, { from: owner });
   });
 
@@ -41,6 +46,13 @@ contract("Crowdsale", ([owner, manaWalletAddress, buyer]) => {
   });
 
   context("Crowdsale", async () => {
+    it(`should own ${TOTAL_TOKEN_SUPPLY} ICO tokens`, async () => {
+      let crowdsaleICOTokenBalance = await ICOtoken.balanceOf(
+        crowdsale.address
+      );
+      assert(crowdsaleICOTokenBalance == TOTAL_TOKEN_SUPPLY);
+    });
+
     it("should accept MANA payments", async () => {
       // Log Buyer balance of MANA and ICOtoken before buy
       let buyerMANA = await MANAtoken.balanceOf(buyer);
@@ -69,7 +81,7 @@ contract("Crowdsale", ([owner, manaWalletAddress, buyer]) => {
         MANA_USED_FOR_BUYING,
         `Allowance is not ${MANA_USED_FOR_BUYING}`
       );
-
+      //
       // Buy ICO Tokens from crowdsale contract with MANA
       let tx2 = await crowdsale.buyTokens(MANA_USED_FOR_BUYING, {
         from: buyer
